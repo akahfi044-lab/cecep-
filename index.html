@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Klinik</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        
+        /* Logika Tampilan Halaman */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* Form & Container Styles */
+        .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; margin-top: 30px; }
+        .container-admin { max-width: 100%; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; margin-top: 30px; }
+        input, textarea, select { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;}
+        input[type="radio"] { width: auto; margin-top: 0; margin-bottom: 0; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-size: 14px; margin-bottom: 5px;}
+        button:hover { background: #0056b3; }
+        button.success { background: #28a745; }
+        button.success:hover { background: #218838; }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; font-size: 14px; }
+        th { background: #007bff; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+        
+        /* Action Buttons */
+        .btn { padding: 6px 12px; text-decoration: none; color: white; border-radius: 3px; cursor: pointer; border: none; font-size: 12px; margin: 2px; display: inline-block;}
+        .konfirmasi { background: #28a745; }
+        .hapus { background: #dc3545; }
+        .edit { background: #ffc107; color: black; }
+
+        /* Queue Display */
+        .antrian { margin-top: 20px; background: #d4edda; padding: 20px; text-align: center; border-radius: 10px; border: 1px solid #c3e6cb;}
+        .header-nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;}
+        .error-text { color: red; font-weight: bold; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="page-login" class="page active container">
+        <h2>Login Sistem Informasi Klinik</h2>
+        <p id="login-error" class="error-text" style="display: none;"></p>
+        
+        <label>Username:</label>
+        <input type="text" id="login-username" required>
+        
+        <label>Password:</label>
+        <input type="password" id="login-password" required>
+        
+        <button onclick="prosesLogin()">Login</button>
+        <p>Belum punya akun? <a href="#" onclick="showPage('page-register')">Daftar/Buat Akun di sini</a></p>
+    </div>
+
+
+    <div id="page-register" class="page container">
+        <h2>Pendaftaran Akun Baru</h2>
+        <p id="register-error" class="error-text" style="display: none;"></p>
+        
+        <label>Username Baru:</label>
+        <input type="text" id="reg-username" required>
+        
+        <label>Password:</label>
+        <input type="password" id="reg-password" required>
+        
+        <label>Daftar Sebagai:</label>
+        <select id="reg-role" required>
+            <option value="">-- Pilih Hak Akses --</option>
+            <option value="pasien">Pasien</option>
+            <option value="admin">Admin / Dokter / Developer</option>
+        </select>
+        
+        <button onclick="prosesRegister()" class="success">Buat Akun</button>
+        <p>Sudah punya akun? <a href="#" onclick="showPage('page-login')">Login di sini</a></p>
+    </div>
+
+
+    <div id="page-pendaftaran" class="page container">
+        <div class="header-nav">
+            <h2>Pendaftaran Pasien Baru</h2>
+            <p>Selamat Datang, <b class="user-logged-in"></b> | <a href="#" onclick="prosesLogout()">Logout</a></p>
+        </div>
+
+        <form id="form-pendaftaran" onsubmit="prosesPendaftaran(event)">
+            <label>Nama Lengkap</label>
+            <input type="text" id="pndf-nama" required>
+
+            <label>NIK</label>
+            <input type="text" id="pndf-nik" required>
+
+            <label>Alamat</label>
+            <textarea id="pndf-alamat" rows="3" required></textarea>
+
+            <label>No HP</label>
+            <input type="text" id="pndf-no-hp" required>
+
+            <label>Tanggal Lahir</label>
+            <input type="date" id="pndf-tgl-lahir" required>
+
+            <label>Jenis Kelamin</label><br>
+            <input type="radio" name="jk" value="L" checked> Laki-laki &nbsp;
+            <input type="radio" name="jk" value="P"> Perempuan
+            <br><br>
+
+            <label>Keluhan</label>
+            <textarea id="pndf-keluhan" rows="3" required></textarea>
+
+            <button type="submit" class="success">Kirim Pendaftaran</button>
+        </form>
+
+        <div id="antrian-box" class="antrian" style="display: none;">
+            <h2>Pendaftaran Berhasil</h2>
+            <h3>Nomor Antrian Anda</h3>
+            <h1 id="antrian-nomor" style="font-size:70px; color:red; margin: 10px 0;">0</h1>
+        </div>
+    </div>
+
+
+    <div id="page-admin" class="page container-admin">
+        <div class="header-nav">
+            <h2>Dashboard Admin Klinik</h2>
+            <p>Login Sebagai : <b class="user-logged-in"></b> | <a href="#" onclick="prosesLogout()">Logout</a></p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>No Antrian</th>
+                    <th>Nama</th>
+                    <th>NIK</th>
+                    <th>Alamat</th>
+                    <th>No HP</th>
+                    <th>Keluhan</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-pasien">
+                </tbody>
+        </table>
+    </div>
+
+
+    <div id="page-edit-pasien" class="page container">
+        <h2>Input Resep & Rujukan Pasien: <span id="edit-nama-pasien"></span></h2>
+        
+        <input type="hidden" id="edit-id-pendaftaran">
+
+        <label>Keluhan Pasien:</label>
+        <p style="background: #eee; padding: 10px; border-radius: 4px;"><i id="edit-keluhan-pasien"></i></p>
+
+        <label>Resep Obat:</label>
+        <textarea id="edit-resep" rows="4"></textarea>
+
+        <label>Rujukan Ke (Nama Rumah Sakit jika ada):</label>
+        <input type="text" id="edit-rujukan">
+
+        <button onclick="simpanResep()">Simpan Perubahan</button>
+        <a href="#" onclick="showPage('page-admin')" style="margin-left: 10px; text-decoration: none; color: #007bff;">Kembali ke Dashboard</a>
+    </div>
+
+    <script>
+        // Inisialisasi Database Lokal Data Akun bawaan (jika kosong)
+        if (!localStorage.getItem('users')) {
+            const defaultUsers = [
+                { username: 'admin', password: '123', role: 'admin' },
+                { username: 'pasien', password: '123', role: 'pasien' }
+            ];
+            localStorage.setItem('users', JSON.stringify(defaultUsers));
+        }
+
+        // Inisialisasi Data Pendaftaran Pasien (jika kosong)
+        if (!localStorage.getItem('pendaftaran')) {
+            localStorage.setItem('pendaftaran', JSON.stringify([]));
+        }
+
+        // Fungsi Navigasi Antar Halaman SPA
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            // Jalankan fungsi render spesifik jika membuka dashboard admin
+            if (pageId === 'page-admin') {
+                renderTabelAdmin();
+            }
+        }
+
+        // Proses Login
+        function prosesLogin() {
+            const userIn = document.getElementById('login-username').value;
+            const passIn = document.getElementById('login-password').value;
+            const errBox = document.getElementById('login-error');
+
+            const users = JSON.parse(localStorage.getItem('users'));
+            const foundUser = users.find(u => u.username === userIn && u.password === passIn);
+
+            if (foundUser) {
+                errBox.style.display = 'none';
+                sessionStorage.setItem('session_user', foundUser.username);
+                sessionStorage.setItem('session_role', foundUser.role);
+                
+                // Update teks nama user di navbar
+                document.querySelectorAll('.user-logged-in').forEach(el => el.innerText = foundUser.username);
+
+                // Pengalihan Halaman sesuai Role Hak Akses
+                if (foundUser.role === 'admin') {
+                    showPage('page-admin');
+                } else {
+                    document.getElementById('antrian-box').style.display = 'none';
+                    document.getElementById('form-pendaftaran').reset();
+                    showPage('page-pendaftaran');
+                }
+            } else {
+                errBox.innerText = "Username atau Password salah! Akun tidak terdaftar.";
+                errBox.style.display = 'block';
+            }
+        }
+
+        // Proses Registrasi Akun Baru
+        function prosesRegister() {
+            const userIn = document.getElementById('reg-username').value;
+            const passIn = document.getElementById('reg-password').value;
+            const roleIn = document.getElementById('reg-role').value;
+            const errBox = document.getElementById('register-error');
+
+            if (!userIn || !passIn || !roleIn) {
+                errBox.innerText = "Semua kolom pendaftaran wajib diisi!";
+                errBox.style.display = 'block';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users'));
+            if (users.some(u => u.username === userIn)) {
+                errBox.innerText = "Username sudah digunakan! Silakan pilih username lain.";
+                errBox.style.display = 'block';
+                return;
+            }
+
+            users.push({ username: userIn, password: passIn, role: roleIn });
+            localStorage.setItem('users', JSON.stringify(users));
+            errBox.style.display = 'none';
+
+            alert(`Akun berhasil dibuat sebagai ${roleIn.toUpperCase()}! Silakan login.`);
+            showPage('page-login');
+        }
+
+        // Proses Keluar Sistem (Logout)
+        function prosesLogout() {
+            sessionStorage.clear();
+            showPage('page-login');
+        }
+
+        // Proses Kirim Formulir Pasien Baru
+        function prosesPendaftaran(e) {
+            e.preventDefault();
+            
+            const listPendaftaran = JSON.parse(localStorage.getItem('pendaftaran'));
+            
+            // Generate nomor urut antrian baru
+            let maxAntrian = 0;
+            if(listPendaftaran.length > 0) {
+                maxAntrian = Math.max(...listPendaftaran.map(p => p.nomor_antrian));
+            }
+            const nomorBaru = maxAntrian + 1;
+
+            const jkSelected = document.querySelector('input[name="jk"]:checked').value;
+
+            const pasienBaru = {
+                id_pendaftaran: Date.now(), // Generate ID Unik menggunakan timestamp
+                nomor_antrian: nomorBaru,
+                nama_pasien: document.getElementById('pndf-nama').value,
+                nik: document.getElementById('pndf-nik').value,
+                alamat: document.getElementById('pndf-alamat').value,
+                no_hp: document.getElementById('pndf-no-hp').value,
+                tanggal_lahir: document.getElementById('pndf-tgl-lahir').value,
+                jenis_kelamin: jkSelected,
+                keluhan: document.getElementById('pndf-keluhan').value,
+                status: 'Menunggu',
+                resep_obat: '',
+                rujukan: ''
+            };
+
+            listPendaftaran.push(pasienBaru);
+            localStorage.setItem('pendaftaran', JSON.stringify(listPendaftaran));
+
+            // Tampilkan kotak informasi nomor antrian sukses
+            document.getElementById('antrian-nomor').innerText = nomorBaru;
+            document.getElementById('antrian-box').style.display = 'block';
+
+            // Fitur Text-to-Speech Pengucapan Suara Nomor Antrian Pasien
+            const suara = new SpeechSynthesisUtterance(`Nomor antrian anda adalah ${nomorBaru}`);
+            suara.lang = 'id-ID';
+            window.speechSynthesis.speak(suara);
+        }
+
+        // Render Data Tabel Khusus Dashboard Admin
+        function renderTabelAdmin() {
+            const listPendaftaran = JSON.parse(localStorage.getItem('pendaftaran'));
+            const tbody = document.getElementById('tabel-pasien');
+            tbody.innerHTML = '';
+
+            // Urutkan tabel berdasarkan nomor antrian terkecil (Ascending)
+            listPendaftaran.sort((a,b) => a.nomor_antrian - b.nomor_antrian);
+
+            if (listPendaftaran.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9">Belum ada data pendaftaran pasien.</td></tr>`;
+                return;
+            }
+
+            listPendaftaran.forEach(pasien => {
+                const statusColor = pasien.status === 'Menunggu' ? 'red' : 'green';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pasien.id_pendaftaran}</td>
+                    <td>${pasien.nomor_antrian}</td>
+                    <td>${pasien.nama_pasien}</td>
+                    <td>${pasien.nik}</td>
+                    <td>${pasien.alamat}</td>
+                    <td>${pasien.no_hp}</td>
+                    <td>${pasien.keluhan}</td>
+                    <td><span style="color: ${statusColor}; font-weight: bold;">${pasien.status}</span></td>
+                    <td>
+                        <button class="btn konfirmasi" onclick="konfirmasiPasien(${pasien.id_pendaftaran})">Konfirmasi</button>
+                        <button class="btn edit" onclick="bukaHalamanResep(${pasien.id_pendaftaran})">Resep</button>
+                        <button class="btn hapus" onclick="hapusPasien(${pasien.id_pendaftaran})">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Aksi Admin: Mengubah status Menunggu -> Dikonfirmasi
+        function konfirmasiPasien(id) {
+            let listPendaftaran = JSON.parse(localStorage.getItem('pendaftaran'));
+            listPendaftaran = listPendaftaran.map(p => {
+                if (p.id_pendaftaran === id) p.status = 'Dikonfirmasi';
+                return p;
+            });
+            localStorage.setItem('pendaftaran', JSON.stringify(listPendaftaran));
+            renderTabelAdmin();
+        }
+
+        // Aksi Admin: Menghapus baris pasien dari database lokal
+        function hapusPasien(id) {
+            if (confirm('Hapus data ini?')) {
+                let listPendaftaran = JSON.parse(localStorage.getItem('pendaftaran'));
+                listPendaftaran = listPendaftaran.filter(p => p.id_pendaftaran !== id);
+                localStorage.setItem('pendaftaran', JSON.stringify(listPendaftaran));
+                renderTabelAdmin();
+            }
+        }
+
+        // Aksi Admin: Membuka formulir input resep pasien tertentu
+        function bukaHalamanResep(id) {
+            const listPendaftaran = JSON.parse(localStorage.getItem('pendaftaran'));
+            const pasien = listPendaftaran.find(p => p.id_pendaftaran === id);
+
+            if (pasien) {
+                document.getElementById('edit-id-pendaftaran').value = pasien.id_pendaftaran;
+                document.getElementById('edit-nama-pasien').innerText = pasien.nama_pasien;
+                document.getElementById('edit-keluhan-pasien').innerText = pasien.keluhan;
+                document.getElementById('edit-resep').value = pasien.resep_obat;
+                document.getElementById('edit-rujukan').value = pasien.rujukan;
+                
+                showPage('page-edit-pasien');
+            }
+        }
+
+        // Aksi Admin: Menyimpan hasil input perubahan resep dan rujukan rumah sakit
+        function simpanResep() {
+            const id = parseInt(document.getElementById('edit-id-pendaftaran').value);
+            let listPendaftaran = JSON.parse(localStorage.getItem('pendaftaran'));
+
+            listPendaftaran = listPendaftaran.map(p => {
+                if (p.id_pendaftaran === id) {
+                    p.resep_obat = document.getElementById('edit-resep').value;
+                    p.rujukan = document.getElementById('edit-rujukan').value;
+                }
+                return p;
+            });
+
+            localStorage.setItem('pendaftaran', JSON.stringify(listPendaftaran));
+            alert('Data Rekam Medis (Resep & Rujukan) Berhasil Diperbarui!');
+            showPage('page-admin');
+        }
+    </script>
+</body>
+</html>
